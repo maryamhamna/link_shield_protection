@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Link Shield Pro — Integrated (Deterministic)</title>
+  <style>
+    :root{
+      --accent:#60a5fa;
+      --muted:#9aa6b2;
+      --ok:#10b981;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --card-bg-dark: rgba(6,10,18,0.72);
+      --radius: 12px;
+      --shadow: 0 8px 30px rgba(2,6,23,0.5);
+      --maxw: 1100px;
+      color-scheme: light;
+    }
+
+    /* Background image with dark overlay so UI is always readable */
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px;
+      background:
+        linear-gradient(180deg, rgba(3,6,12,0.78) 0%, rgba(3,6,12,0.78) 100%),
+        url("https://i.ndtvimg.com/i/2017-09/cyber-crime-generic-istock_650x400_81504427706.jpg?downsize=545:307");
+      background-size: cover;
+      background-position: center;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      color: #e9eef6;
+    }
+
+    .wrap { width:100%; max-width:var(--maxw); }
+
+    header {
+      display:flex;
+      align-items:center;
+      gap:16px;
+      padding:18px;
+      border-radius:var(--radius);
+      margin-bottom:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .logo-icon {
+      width:56px;
+      height:56px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#1e293b,#0ea5e9);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:18px;
+      color:white;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+    }
+
+    header h1 { margin:0; font-size:20px; color:#fff }
+    header p { margin:0; color:var(--muted); font-size:13px }
+
+    .main {
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:18px;
+      align-items:start;
+      width:100%;
+    }
+
+    /* Left column (controls + results) */
+    .card {
+      background: var(--card-bg-dark);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+      color:#e6eef6;
+    }
+
+    .card h2 { margin:0 0 10px 0; font-size:18px }
+
+    .url-row {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:12px;
+    }
+
+    input.url {
+      flex:1;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.06);
+      background: transparent;
+      color: inherit;
+      font-size:14px;
+    }
+
+    button.btn {
+      padding:10px 14px;
+      border-radius:10px;
+      border:0;
+      cursor:pointer;
+      font-weight:600;
+      background:var(--accent);
+      color:#031026;
+    }
+
+    button.ghost {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      color:var(--muted);
+      padding:9px 12px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+
+    .status { margin-top:14px; font-size:14px; color:var(--muted) }
+
+    .checks { margin-top:12px; font-size:13px; color:var(--muted); line-height:1.5 }
+
+    .verdict {
+      display:inline-flex; gap:8px; align-items:center;
+      padding:6px 10px; border-radius:999px; font-weight:700;
+    }
+    .verdict.safe { background: rgba(16,185,129,0.12); color:var(--ok) }
+    .verdict.susp { background: rgba(245,158,11,0.08); color:var(--warn) }
+    .verdict.bad  { background: rgba(239,68,68,0.08); color:var(--bad) }
+
+    /* Result panels */
+    .result {
+      display:none;
+      margin-top:16px;
+      padding:14px;
+      border-radius:10px;
+      animation: fadeIn .36s ease;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-left: 5px solid transparent;
+    }
+    .result.safe { border-left-color: var(--ok) }
+    .result.warn { border-left-color: var(--warn) }
+    .result.danger { border-left-color: var(--bad) }
+
+    .result h3 { margin:0 0 8px 0; font-size:16px }
+    .result p { margin:0; color:var(--muted) }
+
+    .actions { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap }
+
+    /* Right column (sandbox preview and info) */
+    .side {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .sandbox {
+      border-radius:var(--radius);
+      overflow:hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow:var(--shadow);
+    }
+    .sandbox .head {
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background: linear-gradient(90deg, rgba(9,15,25,0.75), rgba(9,15,25,0.6));
+      color: #fff;
+    }
+    .sandbox .body { padding:12px; }
+    .sandbox iframe {
+      width:100%;
+      height:360px;
+      border:0;
+      display:block;
+      background:white;
+    }
+
+    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      background: rgba(255,255,255,0.02);
+      border-radius:999px;
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .timer { font-size:13px; color:var(--muted) }
+
+    footer {
+      margin-top:18px;
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    @keyframes fadeIn { from { opacity:0; transform: translateY(6px) } to { opacity:1; transform:none } }
+
+    /* Responsive: single column under 980px */
+    @media (max-width: 980px) {
+      .main { grid-template-columns: 1fr; }
+      .side { order: 2; }
+    }
+
+    /* Clear cache button style */
+    .clear-cache-btn {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-icon">LSP</div>
+      <div>
+        <h1>Link Shield Pro</h1>
+        <p>Heuristic + deterministic sandboxed preview — UI-protected background image</p>
+      </div>
+    </header>
+
+    <div class="main">
+      <!-- LEFT: Controls + Results -->
+      <div class="card">
+        <h2>Analyze a URL</h2>
+
+        <div class="url-row" style="margin-top:10px;">
+          <input id="urlInput" class="url" type="url" placeholder="Paste a URL (include https://)" value="https://example.com" />
+          <button id="analyzeBtn" class="btn">Analyze</button>
+          <button id="openBtn" class="ghost" disabled>Open Link</button>
+        </div>
+
+        <div class="status" id="status">Status: Idle</div>
+        <div class="checks" id="checksBox" aria-live="polite"></div>
+
+        <!-- Results -->
+        <div id="resultSafe" class="result safe">
+          <h3>✅ This link appears to be safe</h3>
+          <p>Basic heuristics and known lists show no immediate issues. You may open normally or in the sandbox if you prefer.</p>
+          <div class="actions">
+            <button id="visitNormal" class="btn">Visit Normally</button>
+            <button id="visitSandboxFromSafe" class="ghost">Open in Sandbox</button>
+          </div>
+        </div>
+
+        <div id="resultWarn" class="result warn">
+          <h3>⚠️ Use caution with this link</h3>
+          <p>Suspicious signals detected (punycode, redirect patterns, or phishing keywords). Recommended to open inside the sandbox.</p>
+          <div class="actions">
+            <button id="visitSandbox" class="btn">Open in Sandbox</button>
+            <button id="visitAnyway" class="ghost">Visit Anyway</button>
+          </div>
+        </div>
+
+        <div id="resultDanger" class="result danger">
+          <h3>❌ Dangerous link detected!</h3>
+          <p>This URL matches known blacklist or strong malicious heuristics. We strongly advise against visiting; use strict sandbox only if you must analyze it.</p>
+          <div class="actions">
+            <button id="analyzeDanger" class="ghost">Analyze Threat</button>
+            <button id="proceedDanger" class="btn" style="background:#ff6b6b;color:white">Open in Strict Sandbox</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Sandbox and Info -->
+      <div class="side">
+        <div class="sandbox">
+          <div class="head">
+            <div>
+              <strong>🔒 Protected Sandbox</strong><br/>
+              <span style="font-size:12px;color:var(--muted)">Use the sandbox to preview suspected content</span>
+            </div>
+            <div class="controls">
+              <label class="pill">Mode:
+                <select id="sandboxMode" style="margin-left:6px;border-radius:8px;padding:6px 8px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.06)">
+                  <option value="strict">Strict (no scripts)</option>
+                  <option value="permissive">Permissive (allow scripts)</option>
+                </select>
+              </label>
+              <span class="pill timer" id="timer">⏳ Auto-close inactive</span>
+            </div>
+          </div>
+
+          <div class="body">
+            <iframe id="sandboxFrame" sandbox="allow-same-origin" src="about:blank"></iframe>
+            <div style="margin-top:10px;color:var(--muted);font-size:13px">
+              <div class="pill" style="display:inline-flex;align-items:center;gap:8px">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--ok);display:inline-block"></span>
+                Sandbox Active
+              </div>
+              <p style="margin-top:8px">Note: Browser iframe sandboxing is limited. Some sites block embedding (X-Frame-Options) or detect sandboxing. For full isolation use a VM or desktop sandbox application.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px;">
+          <h2 style="margin-bottom:8px">About</h2>
+          <p style="margin:0 0 8px 0;color:var(--muted)">This page combines heuristic checks with deterministic reputation mapping and a browser sandbox preview. It is intended for experiments and demos only — do not rely on it for production malware protection.</p>
+          <ul style="margin-left:18px;color:var(--muted);font-size:13px">
+            <li>Heuristics: punycode, length, keywords, HTTPS, hostname complexity</li>
+            <li>Deterministic classification: stable hash per-URL (same URL -> same verdict)</li>
+            <li>Sandbox: Strict / Permissive modes, auto-close timer (120s)</li>
+            <li>Limitations: iframe embedding restrictions, limited isolation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      © 2025 HexaMinds • Link Shield Pro — Built for safe browsing experiments. Use VM/desktop app for full isolation.
+    </footer>
+  </div>
+
+  <!-- Clear cache button -->
+  <button id="clearCache" class="clear-cache-btn" title="Clear cached verdicts">Clear cached verdicts</button>
+
+  <script>
+    /* ====== Combined logic: heuristics + deterministic classifier + caching ====== */
+
+    // Simple blacklist (extend as needed)
+    const BLACKLIST = ["malware.testing.google.test", "bad-phish.example", "phishing.com"];
+
+    // Suspicious keywords in path/query
+    const SUSPICIOUS_KEYWORDS = ["login","verify","update","secure","account","confirm","billing","password","reset"];
+
+    // Demo/test URL lists
+    const testUrls = {
+      safe: ['https://example.com','https://wikipedia.org','https://github.com'],
+      warning: ['http://httpbin.org/redirect-to?url=http://example.com','https://httpbin.org/status/404'],
+      danger: ['http://malware.testing.google.test/testing/malware/','https://phishing.example.com']
+    };
+
+    /* ---------- Helpers ---------- */
+    function hostnameFromUrl(url){
+      try { return new URL(url).hostname.toLowerCase(); } catch { return null; }
+    }
+    function isPunycode(host){ return /xn--/i.test(host); }
+
+    // Heuristic check returns {verdict: 'safe'|'suspicious'|'malicious'|'malformed', reasons: []}
+    function heuristicsCheck(url){
+      const reasons = [];
+      const host = hostnameFromUrl(url);
+      if(!host) return { verdict: "malformed", reasons: ["URL could not be parsed."] };
+
+      // Blacklist exact/contains
+      if(BLACKLIST.some(b => host.includes(b))) return { verdict: "malicious", reasons: [`Matches blacklist (${host})`] };
+
+      if(isPunycode(host)) reasons.push("Uses punycode (possible homograph).");
+      if(url.length > 120) reasons.push("URL is unusually long.");
+      if(host.split(".").length > 4 || host.includes("--")) reasons.push("Complex hostname (many labels or dashes).");
+      if(!url.startsWith("https://")) reasons.push("Not using HTTPS.");
+      const pathSearch = (new URL(url, "https://dummy.test").pathname + new URL(url, "https://dummy.test").search).toLowerCase();
+      if(SUSPICIOUS_KEYWORDS.some(k => pathSearch.includes(k))) reasons.push("Contains phishing-related keyword in path/query.");
+
+      // Decide verdict
+      let verdict = "safe";
+      if(reasons.length > 0) verdict = "suspicious";
+      return { verdict, reasons };
+    }
+
+    /* ------------------ Deterministic classifier + localStorage cache ------------------ */
+
+    /* Simple stable hash (djb2) */
+    function djb2Hash(s){
+      let h = 5381;
+      for(let i=0;i<s.length;i++){
+        h = ((h << 5) + h) + s.charCodeAt(i); // h * 33 + c
+        h = h & 0xffffffff;
+      }
+      return h >>> 0; // unsigned
+    }
+
+    /* localStorage helpers */
+    const CACHE_KEY = 'linkshield:verdicts:v1';
+    function loadCache(){
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch(e) {
+        console.warn('Could not load cache', e);
+        return {};
+      }
+    }
+    function saveCache(cache){
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+      } catch(e) {
+        console.warn('Could not save cache', e);
+      }
+    }
+    function getCachedVerdict(url){
+      const cache = loadCache();
+      return cache[url] || null;
+    }
+    function setCachedVerdict(url, verdictObj){
+      const cache = loadCache();
+      cache[url] = verdictObj;
+      saveCache(cache);
+    }
+
+    /* Deterministic classifier (replaces Math.random fallback)
+       thresholds: <0.60 => safe, <0.85 => warning, else danger */
+    function deterministicClassify(url){
+      const low = url.toLowerCase();
+
+      // 1) Check explicit lists first
+      if(testUrls && testUrls.safe && testUrls.safe.some(u=>low.includes(u))) return 'safe';
+      if(testUrls && testUrls.warning && testUrls.warning.some(u=>low.includes(u))) return 'warning';
+      if(testUrls && testUrls.danger && testUrls.danger.some(u=>low.includes(u))) return 'danger';
+
+      // 2) Check blacklist
+      if(BLACKLIST && BLACKLIST.some(b => hostnameFromUrl(url) && hostnameFromUrl(url).includes(b))) return 'danger';
+
+      // 3) Deterministic hashing fallback
+      const h = djb2Hash(url);
+      const r = (h % 1000000) / 1000000;
+      if(r < 0.60) return 'safe';
+      if(r < 0.85) return 'warning';
+      return 'danger';
+    }
+
+    /* ---------- UI wiring ---------- */
+    const urlInput = document.getElementById('urlInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const openBtn = document.getElementById('openBtn');
+    const status = document.getElementById('status');
+    const checksBox = document.getElementById('checksBox');
+
+    const resultSafe = document.getElementById('resultSafe');
+    const resultWarn = document.getElementById('resultWarn');
+    const resultDanger = document.getElementById('resultDanger');
+
+    const sandboxFrame = document.getElementById('sandboxFrame');
+    const sandboxMode = document.getElementById('sandboxMode');
+    const timerLabel = document.getElementById('timer');
+
+    const clearCacheBtn = document.getElementById('clearCache');
+
+    let lastCheck = null;
+    let countdown = 0;
+    let autoCloseTimer = null;
+    let currentIframeSrc = null;
+
+    function setStatus(txt){ status.textContent = "Status: " + txt; }
+    function hideResults(){ resultSafe.style.display = 'none'; resultWarn.style.display = 'none'; resultDanger.style.display = 'none'; checksBox.innerHTML = ''; }
+    function renderVerdictBlock(verdictObj){
+      hideResults();
+      const v = verdictObj.verdict;
+      // render small summary in checksBox
+      const span = document.createElement('div');
+      span.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><span class="verdict ${v==='safe'?'safe':v==='danger'?'bad':'susp'}">${v.toUpperCase()}</span></div>`;
+      if(verdictObj.reasons && verdictObj.reasons.length){
+        const ul = document.createElement('ul');
+        ul.style.margin = '8px 0 0 18px';
+        ul.style.color = 'var(--muted)';
+        verdictObj.reasons.forEach(r => {
+          const li = document.createElement('li'); li.textContent = r; ul.appendChild(li);
+        });
+        span.appendChild(ul);
+      } else {
+        const p = document.createElement('div'); p.style.color = 'var(--muted)'; p.style.marginTop = '8px'; p.textContent = 'No heuristic issues detected.';
+        span.appendChild(p);
+      }
+      checksBox.appendChild(span);
+
+      // show appropriate panel
+      if(v === 'safe') resultSafe.style.display = 'block';
+      else if(v === 'warning') resultWarn.style.display = 'block';
+      else if(v === 'danger') resultDanger.style.display = 'block';
+    }
+
+    // Analyze action: heuristics first, then deterministic classification + cache
+    analyzeBtn.addEventListener('click', () => {
+      const url = urlInput.value.trim();
+      if(!url){ alert('Enter a URL to analyze.'); return; }
+      try { new URL(url); } catch(e) { alert('Please enter a valid URL (include http:// or https://)'); return; }
+
+      setStatus('Running heuristics...');
+      hideResults();
+
+      const h = heuristicsCheck(url);
+      lastCheck = { url, heuristics: h };
+
+      // immediate dangerous/malformed from heuristics
+      if(h.verdict === 'malformed' || h.verdict === 'malicious') {
+        const verdictObj = { verdict: 'danger', reasons: h.reasons };
+        renderVerdictBlock(verdictObj);
+        setCachedVerdict(url, verdictObj); // persist deterministic result
+        setStatus('Verdict: DANGER (heuristic)');
+        openBtn.disabled = false;
+        return;
+      }
+
+      // suspicious heuristics -> show warning and cache
+      if(h.verdict === 'suspicious') {
+        const verdictObj = { verdict: 'warning', reasons: h.reasons };
+        renderVerdictBlock(verdictObj);
+        setCachedVerdict(url, verdictObj);
+        setStatus('Verdict: SUSPICIOUS (heuristic)');
+        openBtn.disabled = false;
+        return;
+      }
+
+      // heuristics say safe -> check cache first
+      const cached = getCachedVerdict(url);
+      if(cached){
+        // Use cached deterministic verdict
+        renderVerdictBlock(cached);
+        setStatus('Analysis complete (cached verdict).');
+        openBtn.disabled = false;
+        lastCheck.classification = cached.verdict;
+        return;
+      }
+
+      // No cache -> use deterministic classifier (fast)
+      setStatus('Heuristics OK — running deterministic reputation check...');
+      analyzeBtn.textContent = 'Analyzing...'; analyzeBtn.disabled = true;
+
+      setTimeout(() => {
+        const cls = deterministicClassify(url);
+        const verdictObj = {
+          verdict: cls === 'safe' ? 'safe' : (cls === 'warning' ? 'warning' : 'danger'),
+          reasons: cls === 'safe' ? [] : ['Reputation signals suggest caution (deterministic).']
+        };
+        renderVerdictBlock(verdictObj);
+        setCachedVerdict(url, verdictObj); // persist so same URL always returns same verdict
+        setStatus('Analysis complete.');
+        analyzeBtn.textContent = 'Analyze';
+        analyzeBtn.disabled = false;
+        openBtn.disabled = false;
+        lastCheck.classification = cls;
+      }, 500);
+    });
+
+    // Open button: if heuristics/class say safe -> open normally, else prompt to sandbox
+    openBtn.addEventListener('click', () => {
+      if(!lastCheck){ setStatus('Run analysis first.'); return; }
+      const url = lastCheck.url;
+      const dangerous = lastCheck.heuristics && (lastCheck.heuristics.verdict === 'malicious' || lastCheck.heuristics.verdict === 'malformed') || lastCheck.classification === 'danger';
+      const suspicious = lastCheck.heuristics && lastCheck.heuristics.verdict === 'suspicious' || lastCheck.classification === 'warning';
+
+      if(dangerous) {
+        if(!confirm('⚠️ Detected dangerous signals. Open in sandbox instead?')) return;
+        openSandbox(url, true);
+        return;
+      }
+      if(suspicious) {
+        if(!confirm('⚠️ Suspicious link. Open in sandbox?')) return;
+        openSandbox(url, false);
+        return;
+      }
+      // safe -> open normally
+      setStatus('Opening normally...');
+      window.open(url, '_blank');
+    });
+
+    // Action buttons inside results
+    document.getElementById('visitNormal').addEventListener('click', () => {
+      if(!lastCheck) return alert('Analyze first.');
+      window.open(lastCheck.url, '_blank');
+    });
+
+    document.getElementById('visitSandboxFromSafe').addEventListener('click', () => {
+      if(!lastCheck) return alert('Analyze first.');
+      openSandbox(lastCheck.url, false);
+    });
+
+    document.getElementById('visitSandbox').addEventListener('click', () => {
+      if(!lastCheck) return alert('Analyze first.');
+      openSandbox(lastCheck.url, false);
+    });
+
+    document.getElementById('visitAnyway').addEventListener('click', () => {
+      if(!lastCheck) return alert('Analyze first.');
+      window.open(lastCheck.url, '_blank');
+    });
+
+    document.getElementById('analyzeDanger').addEventListener('click', () => {
+      alert('Threat analysis (demo):\n\n- Potential phishing patterns\n- Suspicious redirects\n- Known-malware patterns\n- Recommend offline/VM analysis');
+    });
+
+    document.getElementById('proceedDanger').addEventListener('click', () => {
+      if(!lastCheck) return alert('Analyze first.');
+      if(confirm('This link is flagged as dangerous. Proceed to open in strict sandbox?')) {
+        openSandbox(lastCheck.url, true);
+      }
+    });
+
+    // Clear cache control
+    clearCacheBtn.addEventListener('click', () => {
+      if(confirm('Clear all cached verdicts?')) {
+        localStorage.removeItem(CACHE_KEY);
+        alert('Cached verdicts cleared.');
+      }
+    });
+
+    // Sandbox functions
+    function startAutoClose(seconds = 120){
+      clearInterval(autoCloseTimer);
+      countdown = seconds;
+      timerLabel.textContent = `⏳ Auto-close in ${countdown}s`;
+      autoCloseTimer = setInterval(() => {
+        countdown--;
+        timerLabel.textContent = `⏳ Auto-close in ${countdown}s`;
+        if(countdown <= 0){
+          clearInterval(autoCloseTimer);
+          closeSandbox();
+          setStatus('Sandbox auto-closed.');
+        }
+      }, 1000);
+    }
+
+    function closeSandbox(){
+      sandboxFrame.src = 'about:blank';
+      timerLabel.textContent = '⏳ Auto-close inactive';
+    }
+
+    // openSandbox(url, strictFlag) - strictFlag forces strict mode
+    function openSandbox(url, forceStrict = false){
+      try {
+        const sandboxUrl = url + (url.includes('?') ? '&' : '?') + 'sandbox=' + Date.now();
+
+        const mode = forceStrict ? 'strict' : document.getElementById('sandboxMode').value;
+        let attrs = 'allow-same-origin';
+        if(mode === 'permissive') attrs += ' allow-scripts allow-forms allow-popups';
+
+        sandboxFrame.removeAttribute('sandbox');
+        sandboxFrame.setAttribute('sandbox', attrs);
+
+        sandboxFrame.src = sandboxUrl;
+        currentIframeSrc = sandboxUrl;
+
+        sandboxFrame.scrollIntoView({behavior:'smooth'});
+        startAutoClose(60);
+        setStatus('Sandbox running — auto-close in 60 seconds');
+
+        // embed load handling
+        function onLoad(){
+          try {
+            const bodyText = sandboxFrame.contentWindow.document.body.innerText || "";
+            if(bodyText.toLowerCase().includes('refused to connect') || bodyText.toLowerCase().includes('x-frame-options')){
+              alert('This site appears to block embedding or cannot be displayed in the sandbox.');
+              closeSandbox();
+            }
+          } catch(e){
+            // cross-origin; expected for many sites
+          }
+          sandboxFrame.removeEventListener('load', onLoad);
+        }
+        sandboxFrame.addEventListener('load', onLoad);
+
+        function onError(){
+          alert('Site could not be loaded in sandbox (embedding may be blocked).');
+          closeSandbox();
+          sandboxFrame.removeEventListener('error', onError);
+        }
+        sandboxFrame.addEventListener('error', onError);
+
+      } catch(e){
+        alert('Failed to open sandbox: ' + e.message);
+      }
+    }
+
+    // initialize UI state
+    (function init(){
+      hideResults();
+      setStatus('Idle');
+      timerLabel.textContent = '⏳ Auto-close inactive';
+    })();
+
+  </script>
+</body>
+</html>
